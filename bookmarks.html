@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>書籤管理</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #4f46e5;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      color: #6b7280;
+      margin-top: 0.4rem;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05);
+    }
+
+    .form-card { margin-bottom: 1.5rem; }
+
+    .form-card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      color: #111827;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      background: #fafafa;
+    }
+
+    input[type="text"]:focus, input[type="url"]:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+      background: #fff;
+    }
+
+    input::placeholder { color: #9ca3af; }
+
+    .btn-add {
+      width: 100%;
+      padding: 0.7rem;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-add:hover { background: #4338ca; }
+    .btn-add:active { transform: scale(0.98); }
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .list-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .count-badge {
+      background: #eef2ff;
+      color: #4f46e5;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    .bookmark-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .bookmark-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: #f9fafb;
+      border: 1.5px solid #f3f4f6;
+      border-radius: 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      animation: slideIn 0.2s ease;
+    }
+
+    .bookmark-item:hover {
+      border-color: #e0e7ff;
+      box-shadow: 0 2px 8px rgba(79,70,229,0.08);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .favicon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: #e0e7ff;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #4f46e5;
+      overflow: hidden;
+    }
+
+    .favicon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+
+    .bookmark-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .bookmark-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #111827;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bookmark-url {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .bookmark-url a {
+      color: #6366f1;
+      text-decoration: none;
+    }
+
+    .bookmark-url a:hover { text-decoration: underline; }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #d1d5db;
+      font-size: 1.1rem;
+      padding: 0.25rem;
+      border-radius: 6px;
+      line-height: 1;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .btn-delete:hover { color: #ef4444; background: #fef2f2; }
+
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: #9ca3af;
+    }
+
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .empty-state p { font-size: 0.9rem; }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #111827;
+      color: #fff;
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>書籤管理</h1>
+      <p>儲存你常用的網頁連結</p>
+    </header>
+
+    <div class="card form-card">
+      <h2>新增書籤</h2>
+      <div class="form-group">
+        <input type="text" id="titleInput" placeholder="標題（例如：Google）" maxlength="80">
+        <input type="url" id="urlInput" placeholder="網址（例如：https://google.com）">
+      </div>
+      <button class="btn-add" onclick="addBookmark()">新增書籤</button>
+    </div>
+
+    <div class="card">
+      <div class="list-header">
+        <h2>已儲存的書籤</h2>
+        <span class="count-badge" id="countBadge">0</span>
+      </div>
+      <div class="bookmark-list" id="bookmarkList"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'bookmarks_v1';
+
+    function load() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function save(bookmarks) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+    }
+
+    function getHostInitial(url) {
+      try { return new URL(url).hostname.replace('www.', '')[0].toUpperCase(); }
+      catch { return '?'; }
+    }
+
+    function getFaviconUrl(url) {
+      try { const { protocol, hostname } = new URL(url); return `${protocol}//${hostname}/favicon.ico`; }
+      catch { return null; }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function render() {
+      const bookmarks = load();
+      const list = document.getElementById('bookmarkList');
+      document.getElementById('countBadge').textContent = bookmarks.length;
+
+      if (bookmarks.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="icon">🔖</div><p>還沒有書籤，新增一個吧！</p></div>`;
+        return;
+      }
+
+      list.innerHTML = bookmarks.map((b, i) => {
+        const faviconUrl = getFaviconUrl(b.url);
+        const initial = getHostInitial(b.url);
+        const faviconHtml = faviconUrl
+          ? `<img src="${escapeHtml(faviconUrl)}" alt="" onerror="this.parentElement.textContent='${initial}'">`
+          : initial;
+        return `
+          <div class="bookmark-item" data-index="${i}">
+            <div class="favicon">${faviconHtml}</div>
+            <div class="bookmark-info">
+              <div class="bookmark-title">${escapeHtml(b.title)}</div>
+              <div class="bookmark-url"><a href="${escapeHtml(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.url)}</a></div>
+            </div>
+            <button class="btn-delete" onclick="deleteBookmark(${i})" title="刪除">✕</button>
+          </div>`;
+      }).join('');
+    }
+
+    function addBookmark() {
+      const titleEl = document.getElementById('titleInput');
+      const urlEl = document.getElementById('urlInput');
+      const title = titleEl.value.trim();
+      let url = urlEl.value.trim();
+
+      if (!title) { showToast('請輸入標題'); titleEl.focus(); return; }
+      if (!url) { showToast('請輸入網址'); urlEl.focus(); return; }
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+      try { new URL(url); } catch { showToast('網址格式不正確'); urlEl.focus(); return; }
+
+      const bookmarks = load();
+      bookmarks.unshift({ title, url, addedAt: Date.now() });
+      save(bookmarks);
+      titleEl.value = '';
+      urlEl.value = '';
+      titleEl.focus();
+      render();
+      showToast('書籤已新增');
+    }
+
+    function deleteBookmark(index) {
+      const bookmarks = load();
+      bookmarks.splice(index, 1);
+      save(bookmarks);
+      render();
+      showToast('書籤已刪除');
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+    }
+
+    document.getElementById('urlInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addBookmark();
+    });
+    document.getElementById('titleInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('urlInput').focus();
+    });
+
+    render();
+  </script>
+</body>
+</html>
