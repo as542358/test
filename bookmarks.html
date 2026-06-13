@@ -97,6 +97,32 @@
     .btn-add:hover { background: #4338ca; }
     .btn-add:active { transform: scale(0.98); }
 
+    .search-box {
+      width: 100%;
+      padding: 0.65rem 0.9rem 0.65rem 2.4rem;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      color: #111827;
+      background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 0.75rem center;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 1rem;
+    }
+
+    .search-box:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+      background-color: #fff;
+    }
+
+    .search-box::placeholder { color: #9ca3af; }
+
+    .highlight {
+      background: #fef08a;
+      border-radius: 2px;
+    }
+
     .list-header {
       display: flex;
       align-items: center;
@@ -268,6 +294,7 @@
         <h2>已儲存的書籤</h2>
         <span class="count-badge" id="countBadge">0</span>
       </div>
+      <input type="text" class="search-box" id="searchInput" placeholder="搜尋書籤標題…">
       <div class="bookmark-list" id="bookmarkList"></div>
     </div>
   </div>
@@ -300,30 +327,47 @@
       return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    function highlight(text, query) {
+      if (!query) return escapeHtml(text);
+      const escaped = escapeHtml(text);
+      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return escaped.replace(new RegExp(escapedQuery, 'gi'), m => `<mark class="highlight">${m}</mark>`);
+    }
+
     function render() {
       const bookmarks = load();
+      const query = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+      const filtered = query
+        ? bookmarks.filter(b => b.title.toLowerCase().includes(query))
+        : bookmarks;
       const list = document.getElementById('bookmarkList');
-      document.getElementById('countBadge').textContent = bookmarks.length;
+      document.getElementById('countBadge').textContent = filtered.length;
 
       if (bookmarks.length === 0) {
         list.innerHTML = `<div class="empty-state"><div class="icon">🔖</div><p>還沒有書籤，新增一個吧！</p></div>`;
         return;
       }
 
-      list.innerHTML = bookmarks.map((b, i) => {
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>找不到符合「${escapeHtml(query)}」的書籤</p></div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map((b, i) => {
+        const realIndex = bookmarks.indexOf(b);
         const faviconUrl = getFaviconUrl(b.url);
         const initial = getHostInitial(b.url);
         const faviconHtml = faviconUrl
           ? `<img src="${escapeHtml(faviconUrl)}" alt="" onerror="this.parentElement.textContent='${initial}'">`
           : initial;
         return `
-          <div class="bookmark-item" data-index="${i}">
+          <div class="bookmark-item" data-index="${realIndex}">
             <div class="favicon">${faviconHtml}</div>
             <div class="bookmark-info">
-              <div class="bookmark-title">${escapeHtml(b.title)}</div>
+              <div class="bookmark-title">${highlight(b.title, query)}</div>
               <div class="bookmark-url"><a href="${escapeHtml(b.url)}" target="_blank" rel="noopener">${escapeHtml(b.url)}</a></div>
             </div>
-            <button class="btn-delete" onclick="deleteBookmark(${i})" title="刪除">✕</button>
+            <button class="btn-delete" onclick="deleteBookmark(${realIndex})" title="刪除">✕</button>
           </div>`;
       }).join('');
     }
@@ -373,6 +417,7 @@
     document.getElementById('titleInput').addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('urlInput').focus();
     });
+    document.getElementById('searchInput').addEventListener('input', render);
 
     render();
   </script>
